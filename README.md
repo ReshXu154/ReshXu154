@@ -1,232 +1,64 @@
-local settings = {
-
-    enabled = true,
-
-    teamCheck = false,
-
-}
-
-
+-- LocalScript
 
 local Players = game:GetService("Players")
-
 local RunService = game:GetService("RunService")
 
-local wtf = {}
-
-
-
-function esp(player)
-
-    if not settings.enabled then return end
-
-    if settings.teamCheck and player.Team == Players.LocalPlayer.Team then return end
-
-    if player == Players.LocalPlayer then return end
-
-
-
-    local character = player.Character or player.CharacterAdded:Wait()
-
-    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-
-
-
-    local Box = Drawing.new("Square")
-
-    Box.Color = Color3.new(1, 0, 0)
-
-    Box.Thickness = 2
-
-    Box.Transparency = 1
-
-    Box.Filled = false
-
-
-
-    local tracer = Drawing.new("Line")
-
-    tracer.Color = Color3.new(1, 0, 0)
-
-    tracer.Thickness = 1
-
-    tracer.Transparency = 1
-
-
-
-    local name = Drawing.new("Text")
-
-    name.Text = player.Name
-
-    name.Color = Color3.new(1, 1, 1)
-
-    name.Size = 20
-
-    name.Center = true
-
-    name.Outline = true
-
-    name.Transparency = 1
-
-
-
-    wtf[player] = {box = Box, tracer = tracer, name = name}
-
-
-
-    local function loop()
-
-        if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
-
-            Box.Visible = false
-
-            tracer.Visible = false
-
-            name.Visible = false
-
-            return
-
-        end
-
-
-
-        local hrpPosition, onScreen = workspace.CurrentCamera:WorldToViewportPoint(humanoidRootPart.Position)
-
-        if onScreen then
-
-            local top = workspace.CurrentCamera:WorldToViewportPoint(humanoidRootPart.Position + Vector3.new(0, 3, 0))
-
-            local bottom = workspace.CurrentCamera:WorldToViewportPoint(humanoidRootPart.Position - Vector3.new(0, 3, 0))
-
-            local size = Vector2.new(math.abs(top.X - bottom.X) * 1.5, math.abs(top.Y - bottom.Y) * 1.5)
-
-            Box.Size = size
-
-            Box.Position = Vector2.new(hrpPosition.X - size.X / 2, hrpPosition.Y - size.Y / 2)
-
-            Box.Visible = true
-
-
-
-            tracer.From = Vector2.new(workspace.CurrentCamera.ViewportSize.X / 2, workspace.CurrentCamera.ViewportSize.Y)
-
-            tracer.To = Vector2.new(hrpPosition.X, hrpPosition.Y)
-
-            tracer.Visible = true
-
-
-
-            name.Position = Vector2.new(hrpPosition.X, hrpPosition.Y - size.Y / 2 - 20)
-
-            name.Visible = true
-
-        else
-
-            Box.Visible = false
-
-            tracer.Visible = false
-
-            name.Visible = false
-
-        end
-
+-- Function to create a highlight for a character
+local function createHighlight(character)
+    -- Check if the character already has a highlight
+    if not character:FindFirstChild("Highlight") then
+        local highlight = Instance.new("Highlight")
+        highlight.Parent = character
+        highlight.FillColor = Color3.new(1, 0, 0) -- Red color
+        highlight.FillTransparency = 0.5 -- 50% transparent
+        highlight.OutlineColor = Color3.new(1, 1, 0) -- Yellow outline
+        highlight.OutlineTransparency = 0 -- No transparency for outline
     end
-
-
-
-    RunService.RenderStepped:Connect(loop)
-
 end
 
-
-
-function remove(player)
-
-    if wtf[player] then
-
-        wtf[player].box:Remove()
-
-        wtf[player].tracer:Remove()
-
-        wtf[player].name:Remove()
-
-        wtf[player] = nil
-
+-- Function to remove highlight from a character
+local function removeHighlight(character)
+    local highlight = character:FindFirstChild("Highlight")
+    if highlight then
+        highlight:Destroy()
     end
-
 end
 
+-- Function to update highlights for all players
+local function updateHighlights()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player.Character then
+            createHighlight(player.Character)
+        end
+    end
+end
 
-
-function add(player)
-
+-- Connect to PlayerAdded and PlayerRemoving events
+Players.PlayerAdded:Connect(function(player)
     player.CharacterAdded:Connect(function(character)
-
-        esp(player)
-
+        createHighlight(character)
     end)
+end)
 
-    player.CharacterRemoving:Connect(function(character)
-
-        remove(player)
-
-    end)
-
+Players.PlayerRemoving:Connect(function(player)
     if player.Character then
-
-        esp(player)
-
+        removeHighlight(player.Character)
     end
+end)
 
-end
+-- Update highlights for existing players
+updateHighlights()
 
+-- Update highlights on character added
+Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function(character)
+        createHighlight(character)
+    end)
+end)
 
-
-Players.PlayerAdded:Connect(add)
-
-
-
-for _, player in pairs(Players:GetPlayers()) do
-
-    add(player)
-
-end
-
-
-
-function toggle(state)
-
-    settings.enabled = state
-
-    if not state then
-
-        for _, player in pairs(Players:GetPlayers()) do
-
-            remove(player)
-
-        end
-
-    else
-
-        for _, player in pairs(Players:GetPlayers()) do
-
-            if player.Character then
-
-                esp(player)
-
-            end
-
-        end
-
+-- Update highlights on character added for existing players
+for _, player in ipairs(Players:GetPlayers()) do
+    if player.Character then
+        createHighlight(player.Character)
     end
-
 end
-
-
-
-function this_is_stupid(state)
-
-    settings.teamCheck = state
-
-end
-
