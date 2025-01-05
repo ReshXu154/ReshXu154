@@ -1,64 +1,37 @@
--- LocalScript
-
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local ESP = {}
 
--- Function to create a highlight for a character
-local function createHighlight(character)
-    -- Check if the character already has a highlight
-    if not character:FindFirstChild("Highlight") then
+function ESP:CreateESP(player)
+    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
         local highlight = Instance.new("Highlight")
-        highlight.Parent = character
-        highlight.FillColor = Color3.new(1, 0, 0) -- Red color
-        highlight.FillTransparency = 0.5 -- 50% transparent
-        highlight.OutlineColor = Color3.new(1, 1, 0) -- Yellow outline
-        highlight.OutlineTransparency = 0 -- No transparency for outline
+        highlight.Parent = player.Character
+        highlight.FillColor = Color3.new(1, 0, 0) -- Red color for ESP
+        highlight.OutlineColor = Color3.new(1, 1, 1) -- White outline
+        highlight.Adornee = player.Character
     end
 end
 
--- Function to remove highlight from a character
-local function removeHighlight(character)
-    local highlight = character:FindFirstChild("Highlight")
-    if highlight then
-        highlight:Destroy()
+-- Create ESP for existing players
+for _, player in pairs(Players:GetPlayers()) do
+    if player ~= LocalPlayer then
+        ESP:CreateESP(player)
     end
 end
 
--- Function to update highlights for all players
-local function updateHighlights()
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player.Character then
-            createHighlight(player.Character)
-        end
-    end
-end
-
--- Connect to PlayerAdded and PlayerRemoving events
+-- Create ESP for players that join later
 Players.PlayerAdded:Connect(function(player)
-    player.CharacterAdded:Connect(function(character)
-        createHighlight(character)
+    player.CharacterAdded:Connect(function()
+        ESP:CreateESP(player)
     end)
 end)
 
+-- Update ESP when a player's character is added
 Players.PlayerRemoving:Connect(function(player)
     if player.Character then
-        removeHighlight(player.Character)
+        local highlight = player.Character:FindFirstChildOfClass("Highlight")
+        if highlight then
+            highlight:Destroy()
+        end
     end
 end)
-
--- Update highlights for existing players
-updateHighlights()
-
--- Update highlights on character added
-Players.PlayerAdded:Connect(function(player)
-    player.CharacterAdded:Connect(function(character)
-        createHighlight(character)
-    end)
-end)
-
--- Update highlights on character added for existing players
-for _, player in ipairs(Players:GetPlayers()) do
-    if player.Character then
-        createHighlight(player.Character)
-    end
-end
